@@ -34,7 +34,8 @@ export const ThermometerIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) 
 
 export const GearIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0115 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0H3m18 0h-1.5m-15 0H3m18 0h-1.5M12 4.5v-1.5m0 15v1.5m-4.502-11.002L6.343 6.343m11.314 11.314l-1.157-1.157m-9.006-9.006l1.157 1.157m6.692 6.692l-1.157-1.157M12 12a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-1.007 1.11-.994a8.25 8.25 0 017.393 7.393c.013.55-.454 1.02-.994 1.11l-.524.09c-.528.09-1.053-.186-1.332-.658a4.5 4.5 0 00-6.364-6.364c-.472-.278-.748-.804-.658-1.332l.09-.524zm-2.132.383c.034-.18.062-.357.086-.532a.75.75 0 01.732-.616l.28.046c.49.08.926.436 1.096.903a4.502 4.502 0 006.03 6.03c.467.17.823.606.903 1.096l.046.28a.75.75 0 01-.616.732c-.175.024-.352.052-.532.086l-.524.09c-.528.09-1.053-.186-1.332-.658a4.5 4.5 0 00-6.364-6.364c-.472-.278-.748-.804-.658-1.332l.09-.524z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
   </svg>
 );
 
@@ -96,5 +97,17 @@ export const DropIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 export const ChevronDownIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+);
+
+export const PlayIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+  </svg>
+);
+
+export const CheckIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
     </svg>
 );

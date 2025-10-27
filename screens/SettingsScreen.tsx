@@ -1,8 +1,8 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { SettingsContext, CardSize } from '../context/SettingsContext';
 import { ArrowLeftIcon } from '../components/icons';
-import { AnySwitchBotDevice } from '../types/switchbot';
-import { getDevices } from '../services/switchbotService';
+import { AnySwitchBotDevice, Scene } from '../types/switchbot';
+import { getDevices, getScenes } from '../services/switchbotService';
 import { Spinner } from '../components/ui/Spinner';
 
 interface SettingsScreenProps {
@@ -21,30 +21,45 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateBack }
     const [isLoadingDevices, setIsLoadingDevices] = useState(false);
     const [deviceError, setDeviceError] = useState<string | null>(null);
 
-    const fetchDevices = async () => {
+    const [allScenes, setAllScenes] = useState<Scene[]>([]);
+    const [isLoadingScenes, setIsLoadingScenes] = useState(false);
+    const [sceneError, setSceneError] = useState<string | null>(null);
+
+
+    const fetchAllData = useCallback(async () => {
         if (!localToken || !localSecret) {
             setDeviceError("Please enter API Token and Secret to fetch devices.");
+            setSceneError("Please enter API Token and Secret to fetch scenes.");
             return;
         }
+        
         setIsLoadingDevices(true);
         setDeviceError(null);
+        setIsLoadingScenes(true);
+        setSceneError(null);
+
         try {
-            const deviceList = await getDevices(localToken, localSecret, localProxyUrl);
+            const [deviceList, sceneList] = await Promise.all([
+                getDevices(localToken, localSecret, localProxyUrl),
+                getScenes(localToken, localSecret, localProxyUrl)
+            ]);
             setAllDevices(deviceList);
+            setAllScenes(sceneList);
         } catch (err: any) {
             setDeviceError(err.message);
+            setSceneError(err.message);
         } finally {
             setIsLoadingDevices(false);
+            setIsLoadingScenes(false);
         }
-    };
+    }, [localToken, localSecret, localProxyUrl]);
+
 
     useEffect(() => {
-        // Fetch devices automatically if credentials are provided
         if (settings.token && settings.secret) {
-            fetchDevices();
+            fetchAllData();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Run once on mount
+    }, [settings.token, settings.secret, fetchAllData]);
 
 
     const handleSaveCredentials = () => {
@@ -53,8 +68,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateBack }
         settings.setProxyUrl(localProxyUrl);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
-        // After saving new credentials, try fetching devices
-        fetchDevices();
+        fetchAllData();
     };
 
     const handleDeviceSelection = (deviceId: string) => {
@@ -64,6 +78,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateBack }
             settings.setSelectedDevices(currentSelection.filter(id => id !== deviceId));
         } else {
             settings.setSelectedDevices([...currentSelection, deviceId]);
+        }
+    };
+
+    const handleSceneSelection = (sceneId: string) => {
+        const currentSelection = settings.selectedScenes || [];
+        const isSelected = currentSelection.includes(sceneId);
+        if (isSelected) {
+            settings.setSelectedScenes(currentSelection.filter(id => id !== sceneId));
+        } else {
+            settings.setSelectedScenes([...currentSelection, sceneId]);
         }
     };
 
@@ -94,7 +118,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateBack }
                         </div>
                         <div className="flex items-center justify-end">
                             {saved && <span className="text-green-400 mr-4">Saved!</span>}
-                            <button onClick={handleSaveCredentials} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Save & Fetch Devices</button>
+                            <button onClick={handleSaveCredentials} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Save & Fetch Data</button>
                         </div>
                     </div>
                 </div>
@@ -112,7 +136,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigateBack }
                                     </label>
                                 ))}
                             </div>
-                        ) : <p className="text-gray-400">No devices found. Please check your credentials and click "Save & Fetch Devices".</p>
+                        ) : <p className="text-gray-400">No devices found. Please check your credentials and click "Save & Fetch Data".</p>
+                    }
+                </div>
+
+                 {/* Scene Visibility */}
+                <div className="bg-gray-900 p-6 rounded-lg">
+                    <h2 className="text-xl font-semibold mb-4">Scene Visibility</h2>
+                    {isLoadingScenes ? <Spinner /> : sceneError ? <p className="text-red-400">{sceneError}</p> : 
+                        allScenes.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {allScenes.map(scene => (
+                                    <label key={scene.sceneId} className="flex items-center space-x-3 p-2 bg-gray-800 rounded-md">
+                                        <input type="checkbox" checked={settings.selectedScenes?.includes(scene.sceneId) || false} onChange={() => handleSceneSelection(scene.sceneId)} className="h-5 w-5 rounded bg-gray-700 border-gray-600 text-blue-500 focus:ring-blue-600"/>
+                                        <span>{scene.sceneName}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        ) : <p className="text-gray-400">No scenes found.</p>
                     }
                 </div>
                 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { SettingsContext, CardSize } from '../context/SettingsContext';
-import { getDevices } from '../services/switchbotService';
-import { AnySwitchBotDevice } from '../types/switchbot';
+import { getDevices, getScenes } from '../services/switchbotService';
+import { AnySwitchBotDevice, Scene } from '../types/switchbot';
 import { DeviceCard } from '../components/DeviceCard';
+import { SceneCard } from '../components/SceneCard';
 import { Spinner } from '../components/ui/Spinner';
 import { GearIcon } from '../components/icons';
 
@@ -19,10 +20,11 @@ const cardSizeToGridClass: Record<CardSize, string> = {
 export const MainScreen: React.FC<MainScreenProps> = ({ onNavigateToSettings }) => {
     const settings = useContext(SettingsContext);
     const [allDevices, setAllDevices] = useState<AnySwitchBotDevice[]>([]);
+    const [allScenes, setAllScenes] = useState<Scene[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchDevices = useCallback(async () => {
+    const fetchData = useCallback(async () => {
         if (!settings.token || !settings.secret) {
             setError("API Token and Secret are not set.");
             setIsLoading(false);
@@ -32,31 +34,41 @@ export const MainScreen: React.FC<MainScreenProps> = ({ onNavigateToSettings }) 
         setIsLoading(true);
         setError(null);
         try {
-            const deviceList = await getDevices(settings.token, settings.secret, settings.proxyUrl);
+            const [deviceList, sceneList] = await Promise.all([
+                getDevices(settings.token, settings.secret, settings.proxyUrl),
+                getScenes(settings.token, settings.secret, settings.proxyUrl),
+            ]);
+
             setAllDevices(deviceList);
-            // On first run, select all devices by default for a better user experience
+            setAllScenes(sceneList);
+            
+            // On first run, select all devices and scenes by default
             if (settings.selectedDevices === null) {
                 settings.setSelectedDevices(deviceList.map(d => d.deviceId));
+            }
+            if (settings.selectedScenes === null) {
+                settings.setSelectedScenes(sceneList.map(s => s.sceneId));
             }
         } catch (err: any) {
             setError(err.message);
         } finally {
             setIsLoading(false);
         }
-    }, [settings.token, settings.secret, settings.proxyUrl, settings.selectedDevices, settings.setSelectedDevices]);
+    }, [settings.token, settings.secret, settings.proxyUrl, settings.selectedDevices, settings.selectedScenes, settings.setSelectedDevices, settings.setSelectedScenes]);
 
     useEffect(() => {
-        fetchDevices();
-    }, [fetchDevices]);
+        fetchData();
+    }, [fetchData]);
 
     const visibleDevices = allDevices.filter(device => settings.selectedDevices?.includes(device.deviceId));
+    const visibleScenes = allScenes.filter(scene => settings.selectedScenes?.includes(scene.sceneId));
 
     const renderContent = () => {
-        if (isLoading && allDevices.length === 0) {
+        if (isLoading && allDevices.length === 0 && allScenes.length === 0) {
             return (
                 <div className="flex flex-col items-center justify-center text-center text-white h-64">
                     <Spinner />
-                    <p className="mt-4">Fetching devices...</p>
+                    <p className="mt-4">Fetching devices and scenes...</p>
                 </div>
             );
         }
@@ -70,21 +82,38 @@ export const MainScreen: React.FC<MainScreenProps> = ({ onNavigateToSettings }) 
             );
         }
 
-        if (visibleDevices.length === 0) {
+        if (visibleDevices.length === 0 && visibleScenes.length === 0) {
             return (
                 <div className="text-center text-gray-400">
-                    <p>No devices selected to display.</p>
-                    <button onClick={onNavigateToSettings} className="mt-2 text-white underline">Select devices in Settings</button>
+                    <p>No devices or scenes selected to display.</p>
+                    <button onClick={onNavigateToSettings} className="mt-2 text-white underline">Select items in Settings</button>
                 </div>
             );
         }
 
         return (
-            <div className={`grid ${cardSizeToGridClass[settings.cardSize]} gap-4`}>
-                {visibleDevices.map(device => (
-                    <DeviceCard key={device.deviceId} device={device} />
-                ))}
-            </div>
+             <>
+                {visibleScenes.length > 0 && (
+                    <div className="mb-8">
+                        <h2 className="text-xl font-semibold mb-3">Scenes</h2>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                            {visibleScenes.map(scene => (
+                                <SceneCard key={scene.sceneId} scene={scene} />
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {visibleDevices.length > 0 && (
+                    <div>
+                        <h2 className="text-xl font-semibold mb-3">Devices</h2>
+                        <div className={`grid ${cardSizeToGridClass[settings.cardSize]} gap-4`}>
+                            {visibleDevices.map(device => (
+                                <DeviceCard key={device.deviceId} device={device} />
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>
         );
     }
 

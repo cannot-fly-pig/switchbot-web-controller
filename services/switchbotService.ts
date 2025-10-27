@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../constants';
-import type { AllDevicesResponse, DeviceStatusResponse, CommandBody, AnySwitchBotDevice } from '../types/switchbot';
+import type { AllDevicesResponse, DeviceStatusResponse, CommandBody, AnySwitchBotDevice, Scene } from '../types/switchbot';
 
 const createSignature = async (token: string, secret: string, t: string, nonce: string): Promise<string> => {
     const data = token + t + nonce;
@@ -10,7 +10,7 @@ const createSignature = async (token: string, secret: string, t: string, nonce: 
     const key = await crypto.subtle.importKey(
         'raw',
         keyData,
-        { name: 'HMAC', hash: 'SHA-256' },
+        { name: 'HMAC', hash: 'SHA-26' },
         false,
         ['sign']
     );
@@ -46,7 +46,8 @@ const fetchWithAuth = async (endpoint: string, token: string, secret: string, pr
     
     if (!response.ok) {
         // Handle non-2xx responses that fetch itself doesn't throw for
-        throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
     }
 
     const responseBody = await response.json();
@@ -70,5 +71,16 @@ export const sendCommand = async (token: string, secret: string, deviceId: strin
     return await fetchWithAuth(`/v1.1/devices/${deviceId}/commands`, token, secret, proxyUrl, {
         method: 'POST',
         body: JSON.stringify(command),
+    });
+};
+
+export const getScenes = async (token: string, secret: string, proxyUrl: string): Promise<Scene[]> => {
+    return await fetchWithAuth('/v1.1/scenes', token, secret, proxyUrl, { method: 'GET' });
+};
+
+export const executeScene = async (token: string, secret: string, sceneId: string, proxyUrl: string): Promise<any> => {
+    return await fetchWithAuth(`/v1.1/scenes/${sceneId}/execute`, token, secret, proxyUrl, {
+        method: 'POST',
+        body: JSON.stringify({}), // Body is empty but required for POST with Content-Type
     });
 };

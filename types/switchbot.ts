@@ -55,3 +55,9 @@ export interface CommandBody {
     command: string;
     parameter?: any;
 }
+
+// Type for a single Scene
+export interface Scene {
+    sceneId: string;
+    sceneName: string;
+}
