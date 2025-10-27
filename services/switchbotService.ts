@@ -1,14 +1,6 @@
 import { API_BASE_URL } from '../constants';
 import type { AllDevicesResponse, DeviceStatusResponse, CommandBody, AnySwitchBotDevice, Scene } from '../types/switchbot';
 
-const generateUUID = (): string => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = (Math.random() * 16) | 0;
-        const v = c === 'x' ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-    });
-};
-
 const createSignature = async (token: string, secret: string, t: string, nonce: string): Promise<string> => {
     const data = token + t + nonce;
     const encoder = new TextEncoder();
@@ -33,7 +25,7 @@ const fetchWithAuth = async (endpoint: string, token: string, secret: string, pr
         throw new Error("API Token and Secret are required.");
     }
     const t = Date.now().toString();
-    const nonce = generateUUID();
+    const nonce = crypto.randomUUID();
     const sign = await createSignature(token, secret, t, nonce);
 
     const headers = {
