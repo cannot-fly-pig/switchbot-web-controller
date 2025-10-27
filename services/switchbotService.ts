@@ -10,11 +10,14 @@ const generateUUID = (): string => {
 };
 
 const createSignature = async (token: string, secret: string, t: string, nonce: string): Promise<string> => {
+  if (!crypto.subtle) {
+    throw new Error('Web Crypto API is not available. This application must be run in a secure context (HTTPS).');
+  }
+
   const data = token + t + nonce;
   const encoder = new TextEncoder();
   const keyData = encoder.encode(secret);
   const messageData = encoder.encode(data);
-
 
   const key = await crypto.subtle.importKey(
     'raw',
@@ -26,6 +29,7 @@ const createSignature = async (token: string, secret: string, t: string, nonce: 
 
   const signature = await crypto.subtle.sign('HMAC', key, messageData);
 
+
   return btoa(String.fromCharCode(...new Uint8Array(signature)));
 };
 
@@ -33,6 +37,7 @@ const fetchWithAuth = async (endpoint: string, token: string, secret: string, pr
   if (!token || !secret) {
     throw new Error("API Token and Secret are required.");
   }
+
   const t = Date.now().toString();
   const nonce = generateUUID();
   const sign = await createSignature(token, secret, t, nonce);
@@ -40,6 +45,7 @@ const fetchWithAuth = async (endpoint: string, token: string, secret: string, pr
   const headers = {
     'Authorization': token,
     't': t,
+
     'nonce': nonce,
     'sign': sign,
     'Content-Type': 'application/json; charset=utf8',
@@ -82,7 +88,6 @@ export const sendCommand = async (token: string, secret: string, deviceId: strin
     body: JSON.stringify(command),
   });
 };
-
 
 export const getScenes = async (token: string, secret: string, proxyUrl: string): Promise<Scene[]> => {
   return await fetchWithAuth('/v1.1/scenes', token, secret, proxyUrl, { method: 'GET' });
