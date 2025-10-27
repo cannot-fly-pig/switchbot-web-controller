@@ -1,6 +1,6 @@
-import React, { createContext, ReactNode } from 'react';
+
+import React, { createContext, ReactNode, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import type { AnySwitchBotDevice } from '../types/switchbot';
 
 interface SettingsContextType {
     token: string;
@@ -9,12 +9,9 @@ interface SettingsContextType {
     setSecret: React.Dispatch<React.SetStateAction<string>>;
     proxyUrl: string;
     setProxyUrl: React.Dispatch<React.SetStateAction<string>>;
-    allDevices: AnySwitchBotDevice[];
-    setAllDevices: React.Dispatch<React.SetStateAction<AnySwitchBotDevice[]>>;
-    displayedDeviceIds: string[];
-    setDisplayedDeviceIds: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
+// Providing a default value that matches the type to avoid undefined checks in consumers
 export const SettingsContext = createContext<SettingsContextType>({
     token: '',
     setToken: () => {},
@@ -22,10 +19,6 @@ export const SettingsContext = createContext<SettingsContextType>({
     setSecret: () => {},
     proxyUrl: '',
     setProxyUrl: () => {},
-    allDevices: [],
-    setAllDevices: () => {},
-    displayedDeviceIds: [],
-    setDisplayedDeviceIds: () => {},
 });
 
 interface SettingsProviderProps {
@@ -33,20 +26,22 @@ interface SettingsProviderProps {
 }
 
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
-    const [token, setToken] = useLocalStorage<string>('switchbot_token', '');
-    const [secret, setSecret] = useLocalStorage<string>('switchbot_secret', '');
-    const [proxyUrl, setProxyUrl] = useLocalStorage<string>('switchbot_proxy_url', '');
-    const [allDevices, setAllDevices] = useLocalStorage<AnySwitchBotDevice[]>('switchbot_all_devices', []);
-    const [displayedDeviceIds, setDisplayedDeviceIds] = useLocalStorage<string[]>('switchbot_displayed_devices', []);
+    const [token, setToken] = useLocalStorage<string>('switchbot-token', '');
+    const [secret, setSecret] = useLocalStorage<string>('switchbot-secret', '');
+    const [proxyUrl, setProxyUrl] = useLocalStorage<string>('switchbot-proxy', '');
+
+    const value = useMemo(() => ({
+        token,
+        setToken,
+        secret,
+        setSecret,
+        proxyUrl,
+        setProxyUrl,
+    // Note: setters from useLocalStorage (via useState) are stable and don't need to be in deps array
+    }), [token, secret, proxyUrl]);
 
     return (
-        <SettingsContext.Provider value={{
-            token, setToken,
-            secret, setSecret,
-            proxyUrl, setProxyUrl,
-            allDevices, setAllDevices,
-            displayedDeviceIds, setDisplayedDeviceIds,
-        }}>
+        <SettingsContext.Provider value={value}>
             {children}
         </SettingsContext.Provider>
     );

@@ -1,100 +1,46 @@
-import React, { useState } from 'react';
-import type { AnySwitchBotDevice } from '../types/switchbot';
-import { PowerIcon, PlusIcon, MinusIcon } from './icons';
+
+import React from 'react';
+import { AnySwitchBotDevice } from '../types/switchbot';
 
 interface AirConditionerRemoteProps {
-  device: AnySwitchBotDevice;
-  onCommand: (command: string, parameter?: any) => void;
-  isLoading: boolean;
+    device: AnySwitchBotDevice;
+    onCommand: (command: string, parameter?: any) => void;
+    isLoading: boolean;
 }
 
 export const AirConditionerRemote: React.FC<AirConditionerRemoteProps> = ({ device, onCommand, isLoading }) => {
-    const [power, setPower] = useState<'on' | 'off'>('off');
-    const [temp, setTemp] = useState(22);
-    const [mode, setMode] = useState(1); // 1:auto, 2:cool, 3:dry, 4:fan, 5:heat
-    const [fanSpeed, setFanSpeed] = useState(1); // 1:auto, 2:low, 3:medium, 4:high
+    
+    // Example state for AC controls. The API uses a complex parameter string.
+    // e.g., "30,2,1,on" for 30°C, Auto, Fan speed 1, Power On.
+    // For simplicity, we'll offer basic commands.
 
-    const sendAcCommand = (newTemp: number, newMode: number, newFanSpeed: number, newPower: 'on' | 'off') => {
-        onCommand('setAll', `${newTemp},${newMode},${newFanSpeed},${newPower}`);
+    const handleAcCommand = (power: 'on' | 'off') => {
+        // A very basic example. Real implementation would need to build the parameter string.
+        // Assuming default values for temp, mode, fan speed.
+        const parameter = `25,2,1,${power}`; 
+        onCommand('setAll', parameter);
     };
-
-    const handlePowerToggle = () => {
-        const newPowerState = power === 'on' ? 'off' : 'on';
-        setPower(newPowerState);
-        sendAcCommand(temp, mode, fanSpeed, newPowerState);
-    };
-
-    const handleTempChange = (delta: number) => {
-        const newTemp = temp + delta;
-        setTemp(newTemp);
-        sendAcCommand(newTemp, mode, fanSpeed, power);
-    };
-
-    const handleModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newMode = parseInt(e.target.value, 10);
-        setMode(newMode);
-        sendAcCommand(temp, newMode, fanSpeed, power);
-    };
-
-    const handleFanSpeedChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newFanSpeed = parseInt(e.target.value, 10);
-        setFanSpeed(newFanSpeed);
-        sendAcCommand(temp, mode, newFanSpeed, power);
-    };
-
-    const modeOptions = { '1': 'Auto', '2': 'Cool', '3': 'Dry', '4': 'Fan', '5': 'Heat' };
-    const fanSpeedOptions = { '1': 'Auto', '2': 'Low', '3': 'Medium', '4': 'High' };
 
     return (
-        <div className="space-y-4">
-             <div className="flex items-center justify-between">
-                <span className="font-medium">Power</span>
-                <button 
-                  onClick={handlePowerToggle} 
-                  disabled={isLoading}
-                  className={`p-2 rounded-full transition-colors ${power === 'on' ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300'} disabled:opacity-50`}>
-                  <PowerIcon className="h-6 w-6" />
+        <div className="space-y-2">
+            <p className="text-sm text-gray-400">Basic AC Controls:</p>
+            <div className="flex gap-2">
+                <button
+                    onClick={() => handleAcCommand('on')}
+                    disabled={isLoading}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600"
+                >
+                    Turn On
+                </button>
+                <button
+                    onClick={() => handleAcCommand('off')}
+                    disabled={isLoading}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600"
+                >
+                    Turn Off
                 </button>
             </div>
-            
-            <div className="flex items-center justify-between">
-                <span className="font-medium">Temperature</span>
-                <div className="flex items-center space-x-2">
-                    <button onClick={() => handleTempChange(-1)} disabled={isLoading || power === 'off'} className="p-1 bg-gray-600 rounded-md disabled:opacity-50">
-                        <MinusIcon className="h-5 w-5" />
-                    </button>
-                    <span className="text-lg font-semibold w-12 text-center">{temp}°C</span>
-                    <button onClick={() => handleTempChange(1)} disabled={isLoading || power === 'off'} className="p-1 bg-gray-600 rounded-md disabled:opacity-50">
-                        <PlusIcon className="h-5 w-5" />
-                    </button>
-                </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-                <label htmlFor={`mode-${device.deviceId}`} className="font-medium">Mode</label>
-                <select 
-                    id={`mode-${device.deviceId}`}
-                    value={mode}
-                    onChange={handleModeChange}
-                    disabled={isLoading || power === 'off'}
-                    className="bg-gray-700 border border-gray-600 rounded-md p-1 text-white disabled:opacity-50"
-                >
-                    {Object.entries(modeOptions).map(([value, name]) => <option key={value} value={value}>{name}</option>)}
-                </select>
-            </div>
-
-            <div className="flex items-center justify-between">
-                <label htmlFor={`fan-${device.deviceId}`} className="font-medium">Fan Speed</label>
-                <select 
-                    id={`fan-${device.deviceId}`}
-                    value={fanSpeed}
-                    onChange={handleFanSpeedChange}
-                    disabled={isLoading || power === 'off'}
-                    className="bg-gray-700 border border-gray-600 rounded-md p-1 text-white disabled:opacity-50"
-                >
-                    {Object.entries(fanSpeedOptions).map(([value, name]) => <option key={value} value={value}>{name}</option>)}
-                </select>
-            </div>
+            <p className="text-xs text-gray-500">Note: AC remote implementation is simplified. Uses default settings (25°C, Auto).</p>
         </div>
     );
 };

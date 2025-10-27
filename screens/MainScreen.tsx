@@ -1,50 +1,92 @@
-import React, { useContext } from 'react';
+
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { SettingsContext } from '../context/SettingsContext';
+import { getDevices } from '../services/switchbotService';
+import { AnySwitchBotDevice } from '../types/switchbot';
 import { DeviceCard } from '../components/DeviceCard';
-import { SettingsIcon } from '../components/icons';
+import { Spinner } from '../components/ui/Spinner';
+import { GearIcon } from '../components/icons';
 
 interface MainScreenProps {
     onNavigateToSettings: () => void;
 }
 
 export const MainScreen: React.FC<MainScreenProps> = ({ onNavigateToSettings }) => {
-    const { allDevices, displayedDeviceIds } = useContext(SettingsContext);
+    const settings = useContext(SettingsContext);
+    const [devices, setDevices] = useState<AnySwitchBotDevice[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const devicesToDisplay = allDevices.filter(device => displayedDeviceIds.includes(device.deviceId));
+    const fetchDevices = useCallback(async () => {
+        if (!settings?.token || !settings?.secret) {
+            setError("API Token and Secret are not set.");
+            setIsLoading(false);
+            return;
+        }
+        
+        setIsLoading(true);
+        setError(null);
+        try {
+            const deviceList = await getDevices(settings.token, settings.secret, settings.proxyUrl);
+            setDevices(deviceList);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [settings]);
+
+    useEffect(() => {
+        fetchDevices();
+    }, [fetchDevices]);
+
+    const renderContent = () => {
+        if (isLoading) {
+            return (
+                <div className="flex flex-col items-center justify-center text-center text-white h-64">
+                    <Spinner />
+                    <p className="mt-4">Fetching devices...</p>
+                </div>
+            );
+        }
+
+        if (error) {
+            return (
+                <div className="text-center text-red-400 p-4 bg-red-900/50 rounded-lg">
+                    <p><strong>Error:</strong> {error}</p>
+                    <button onClick={onNavigateToSettings} className="mt-2 text-white underline">Go to Settings</button>
+                </div>
+            );
+        }
+
+        if (devices.length === 0) {
+            return (
+                <div className="text-center text-gray-400">
+                    <p>No devices found.</p>
+                    <button onClick={fetchDevices} className="mt-2 text-white underline">Refresh</button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {devices.map(device => (
+                    <DeviceCard key={device.deviceId} device={device} />
+                ))}
+            </div>
+        );
+    }
 
     return (
-        <div className="w-screen min-h-screen bg-gray-800 text-white p-4 sm:p-6">
-            <header className="flex justify-between items-center mb-6 max-w-7xl mx-auto">
-                <h1 className="text-3xl font-bold">SwitchBot Dashboard</h1>
-                <button 
-                    onClick={onNavigateToSettings} 
-                    className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
-                    aria-label="Go to settings"
-                >
-                    <SettingsIcon className="h-6 w-6" />
+        <div className="bg-gray-800 min-h-screen text-white p-4">
+            <header className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl font-bold">SwitchBot Control</h1>
+                <button onClick={onNavigateToSettings} className="p-2 text-gray-300 hover:text-white">
+                    <GearIcon className="h-6 w-6" />
                 </button>
             </header>
-            <main className="max-w-7xl mx-auto">
-                {devicesToDisplay.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {devicesToDisplay.map(device => (
-                            <DeviceCard key={device.deviceId} device={device} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center bg-gray-900 p-8 rounded-lg">
-                        <h2 className="text-xl font-semibold mb-2">No Devices to Display</h2>
-                        <p className="text-gray-400 mb-4">
-                            Go to settings to fetch your devices and select which ones to show on the dashboard.
-                        </p>
-                        <button 
-                            onClick={onNavigateToSettings} 
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-                        >
-                            Go to Settings
-                        </button>
-                    </div>
-                )}
+            <main>
+                {renderContent()}
             </main>
         </div>
     );
