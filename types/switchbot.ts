@@ -22,6 +22,12 @@ export interface InfraredRemoteDevice extends BaseDevice {
 // A union type that represents any device returned by the API
 export type AnySwitchBotDevice = SwitchBotDevice | InfraredRemoteDevice;
 
+// Type guard to check if a device is an Infrared Remote Device
+export function isInfraredRemoteDevice(device: AnySwitchBotDevice): device is InfraredRemoteDevice {
+    return 'remoteType' in device && (device as InfraredRemoteDevice).remoteType !== undefined;
+}
+
+
 // Type for the response body of the get devices endpoint
 export interface AllDevicesResponse {
     deviceList: SwitchBotDevice[];

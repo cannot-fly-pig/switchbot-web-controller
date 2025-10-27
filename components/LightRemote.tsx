@@ -1,25 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { AnySwitchBotDevice } from '../types/switchbot';
-import { PowerIcon } from './icons';
+import { PowerIcon, PlusIcon, MinusIcon } from './icons';
 
 interface LightRemoteProps {
   device: AnySwitchBotDevice;
-  status: any;
   onCommand: (command: string, parameter?: any) => void;
   isLoading: boolean;
 }
 
-export const LightRemote: React.FC<LightRemoteProps> = ({ device, status, onCommand, isLoading }) => {
-  const power = status?.power;
-  const brightness = status?.brightness;
+export const LightRemote: React.FC<LightRemoteProps> = ({ device, onCommand, isLoading }) => {
+  const [power, setPower] = useState<'on' | 'off'>('off');
 
   const handleTogglePower = () => {
-    onCommand(power === 'on' ? 'turnOff' : 'turnOn');
+    const newCommand = power === 'on' ? 'turnOff' : 'turnOn';
+    onCommand(newCommand);
+    setPower(p => p === 'on' ? 'off' : 'on'); // Optimistically update UI
   };
 
-  const handleSetBrightness = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newBrightness = parseInt(e.target.value, 10);
-    onCommand('setBrightness', newBrightness);
+  const handleBrightnessUp = () => {
+    onCommand('brightnessUp');
+  };
+
+  const handleBrightnessDown = () => {
+    onCommand('brightnessDown');
   };
   
   return (
@@ -33,22 +36,18 @@ export const LightRemote: React.FC<LightRemoteProps> = ({ device, status, onComm
           <PowerIcon className="h-6 w-6" />
         </button>
       </div>
-      {typeof brightness !== 'undefined' && (
-        <div className="flex flex-col">
-          <label htmlFor={`brightness-${device.deviceId}`} className="mb-2 font-medium">Brightness: {brightness}%</label>
-          <input
-            id={`brightness-${device.deviceId}`}
-            type="range"
-            min="1"
-            max="100"
-            value={brightness}
-            onMouseUp={handleSetBrightness} // Send command when user releases the slider
-            onTouchEnd={handleSetBrightness}
-            disabled={isLoading || power !== 'on'}
-            className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer disabled:cursor-not-allowed"
-          />
+      
+      <div className="flex items-center justify-between">
+        <span className="font-medium">Brightness</span>
+        <div className="flex items-center space-x-2">
+            <button onClick={handleBrightnessDown} disabled={isLoading || power === 'off'} className="p-1 bg-gray-600 rounded-md disabled:opacity-50">
+                <MinusIcon className="h-5 w-5" />
+            </button>
+            <button onClick={handleBrightnessUp} disabled={isLoading || power === 'off'} className="p-1 bg-gray-600 rounded-md disabled:opacity-50">
+                <PlusIcon className="h-5 w-5" />
+            </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

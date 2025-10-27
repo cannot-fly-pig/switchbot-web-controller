@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { SettingsContext } from '../context/SettingsContext';
 import { getDeviceStatus, sendCommand } from '../services/switchbotService';
-import type { AnySwitchBotDevice, CommandBody, DeviceStatusResponse } from '../types/switchbot';
+import { AnySwitchBotDevice, CommandBody, DeviceStatusResponse, isInfraredRemoteDevice } from '../types/switchbot';
 import { Spinner } from './ui/Spinner';
 import { RefreshIcon, LightBulbIcon, AirConditionerIcon, BotIcon, ThermometerIcon } from './icons';
 import { AirConditionerRemote } from './AirConditionerRemote';
@@ -38,6 +38,12 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device }) => {
     const [error, setError] = useState<string | null>(null);
 
     const fetchStatus = async () => {
+        // Do not fetch status for IR devices as it's not supported
+        if (isInfraredRemoteDevice(device)) {
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
         try {
@@ -53,7 +59,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device }) => {
     useEffect(() => {
         fetchStatus();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [device.deviceId, token, secret, proxyUrl]);
+    }, [device, token, secret, proxyUrl]);
 
     const handleSendCommand = async (command: string, parameter: any = 'default') => {
         setIsLoading(true);
@@ -65,8 +71,12 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device }) => {
                 parameter,
             };
             await sendCommand(token, secret, device.deviceId, commandBody, proxyUrl);
-            // After sending a command, wait a bit and refresh status
-            setTimeout(fetchStatus, 1500); 
+            // After sending a command, wait a bit and refresh status for non-IR devices
+             if (!isInfraredRemoteDevice(device)) {
+                setTimeout(fetchStatus, 1500); 
+             } else {
+                setIsLoading(false);
+             }
         } catch (err: any) {
             setError(err.message);
             setIsLoading(false);
@@ -78,11 +88,11 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device }) => {
         
         switch (type) {
             case 'Air Conditioner':
-                return <AirConditionerRemote device={device} status={status} onCommand={handleSendCommand} isLoading={isLoading} />;
+                return <AirConditionerRemote device={device} onCommand={handleSendCommand} isLoading={isLoading} />;
             case 'Light':
             case 'Color Bulb':
             case 'Strip Light':
-                 return <LightRemote device={device} status={status} onCommand={handleSendCommand} isLoading={isLoading} />;
+                 return <LightRemote device={device} onCommand={handleSendCommand} isLoading={isLoading} />;
             case 'Bot':
                 return (
                     <button 
@@ -130,16 +140,18 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device }) => {
                 </div>
                 <div className="flex items-center space-x-2">
                     {isLoading && <Spinner />}
-                    <button onClick={fetchStatus} disabled={isLoading} className="p-1 text-gray-400 hover:text-white disabled:text-gray-600">
-                        <RefreshIcon className="h-5 w-5" />
-                    </button>
+                    {!isInfraredRemoteDevice(device) && (
+                      <button onClick={fetchStatus} disabled={isLoading} className="p-1 text-gray-400 hover:text-white disabled:text-gray-600">
+                          <RefreshIcon className="h-5 w-5" />
+                      </button>
+                    )}
                 </div>
             </div>
             
             {error && <p className="text-red-400 text-sm">Error: {error}</p>}
 
             <div>
-                {isLoading && !status ? (
+                {isLoading && !status && !isInfraredRemoteDevice(device) ? (
                     <p className="text-gray-400">Loading status...</p>
                 ) : (
                     renderControls()
