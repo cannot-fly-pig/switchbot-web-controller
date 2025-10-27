@@ -10,7 +10,7 @@ const createSignature = async (token: string, secret: string, t: string, nonce: 
     const key = await crypto.subtle.importKey(
         'raw',
         keyData,
-        { name: 'HMAC', hash: 'SHA-26' },
+        { name: 'HMAC', hash: 'SHA-256' },
         false,
         ['sign']
     );
