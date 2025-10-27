@@ -34,7 +34,7 @@ export const ThermometerIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) 
 
 export const GearIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-1.007 1.11-.962l5.093.471c.524.048.972.502 1.022 1.026l.47 5.093c.045.487-.243.954-.721 1.182l-4.73 2.365c-.478.228-1.045.06-1.32-.42l-2.365-4.73c-.228-.478-.06-1.045.42-1.32l2.365-1.182zM12 15.75a3.75 3.75 0 110-7.5 3.75 3.75 0 010 7.5zM19.5 12a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0115 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m18 0h-1.5m-15 0H3m18 0h-1.5m-15 0H3m18 0h-1.5M12 4.5v-1.5m0 15v1.5m-4.502-11.002L6.343 6.343m11.314 11.314l-1.157-1.157m-9.006-9.006l1.157 1.157m6.692 6.692l-1.157-1.157M12 12a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
   </svg>
 );
 
@@ -90,5 +90,11 @@ export const FanIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 export const DropIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.75 9.75 0 01-8.31-4.79c-.58-1.01.22-2.29 1.34-2.29H19a1.001 1.001 0 01.98 1.28 9.75 9.75 0 01-8.02 5.8zM12 3a9.75 9.75 0 018.31 4.79c.58 1.01-.22 2.29-1.34 2.29H5.03c-1.12 0-1.92-1.28-1.34-2.29A9.75 9.75 0 0112 3z" />
+    </svg>
+);
+
+export const ChevronDownIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
     </svg>
 );

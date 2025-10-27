@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnySwitchBotDevice } from '../types/switchbot';
-import { MinusIcon, PlusIcon, PowerIcon } from './icons';
+import { MinusIcon, PlusIcon, PowerIcon, ChevronDownIcon } from './icons';
 
 interface AirConditionerRemoteProps {
     device: AnySwitchBotDevice;
@@ -45,7 +45,6 @@ export const AirConditionerRemote: React.FC<AirConditionerRemoteProps> = ({ devi
     }
 
     const controlButtonClasses = "p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors disabled:opacity-50";
-    const selectClasses = "w-full bg-gray-700 border-gray-600 rounded-md py-1 px-2 text-sm focus:ring-blue-500 focus:border-blue-500";
     
     return (
         <div className="space-y-3">
@@ -70,15 +69,25 @@ export const AirConditionerRemote: React.FC<AirConditionerRemoteProps> = ({ devi
             </div>
              <div className="flex justify-between items-center">
                 <label htmlFor="ac-mode" className="font-medium">Mode</label>
-                <select id="ac-mode" value={mode} onChange={(e) => handleSettingChange(setMode, parseInt(e.target.value))} disabled={isLoading} className={selectClasses}>
-                   {modes.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-                </select>
+                <div className="relative w-28">
+                    <select id="ac-mode" value={mode} onChange={(e) => handleSettingChange(setMode, parseInt(e.target.value))} disabled={isLoading} className="w-full appearance-none bg-gray-700 border-gray-600 rounded-md py-1 px-3 text-white pr-8 focus:ring-blue-500 focus:border-blue-500">
+                       {modes.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                        <ChevronDownIcon className="h-4 w-4" />
+                    </div>
+                </div>
             </div>
              <div className="flex justify-between items-center">
                 <label htmlFor="ac-fan" className="font-medium">Fan Speed</label>
-                <select id="ac-fan" value={fanSpeed} onChange={(e) => handleSettingChange(setFanSpeed, parseInt(e.target.value))} disabled={isLoading} className={selectClasses}>
-                   {fanSpeeds.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                </select>
+                <div className="relative w-28">
+                    <select id="ac-fan" value={fanSpeed} onChange={(e) => handleSettingChange(setFanSpeed, parseInt(e.target.value))} disabled={isLoading} className="w-full appearance-none bg-gray-700 border-gray-600 rounded-md py-1 px-3 text-white pr-8 focus:ring-blue-500 focus:border-blue-500">
+                       {fanSpeeds.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                    </select>
+                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                        <ChevronDownIcon className="h-4 w-4" />
+                    </div>
+                </div>
             </div>
         </div>
     );

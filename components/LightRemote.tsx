@@ -46,7 +46,7 @@ export const LightRemote: React.FC<LightRemoteProps> = ({ device, onCommand, isL
                     <PlusIcon className="h-5 w-5" />
                 </button>
                 <button
-                    onClick={() => onCommand('setAll', '1')} // Assume brightness 1 for night light
+                    onClick={() => onCommand('setNightLightMode', '1')} // Use valid command for night light
                     disabled={isLoading}
                     className={`${buttonBaseClasses} bg-gray-700 hover:bg-gray-600 text-white`}
                     title="Night Light"
