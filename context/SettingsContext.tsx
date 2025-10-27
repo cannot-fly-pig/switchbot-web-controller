@@ -1,6 +1,7 @@
-
 import React, { createContext, ReactNode, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+
+export type CardSize = 'sm' | 'md' | 'lg';
 
 interface SettingsContextType {
     token: string;
@@ -9,9 +10,12 @@ interface SettingsContextType {
     setSecret: React.Dispatch<React.SetStateAction<string>>;
     proxyUrl: string;
     setProxyUrl: React.Dispatch<React.SetStateAction<string>>;
+    selectedDevices: string[] | null;
+    setSelectedDevices: React.Dispatch<React.SetStateAction<string[] | null>>;
+    cardSize: CardSize;
+    setCardSize: React.Dispatch<React.SetStateAction<CardSize>>;
 }
 
-// Providing a default value that matches the type to avoid undefined checks in consumers
 export const SettingsContext = createContext<SettingsContextType>({
     token: '',
     setToken: () => {},
@@ -19,6 +23,10 @@ export const SettingsContext = createContext<SettingsContextType>({
     setSecret: () => {},
     proxyUrl: '',
     setProxyUrl: () => {},
+    selectedDevices: [],
+    setSelectedDevices: () => {},
+    cardSize: 'md',
+    setCardSize: () => {},
 });
 
 interface SettingsProviderProps {
@@ -29,6 +37,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     const [token, setToken] = useLocalStorage<string>('switchbot-token', '');
     const [secret, setSecret] = useLocalStorage<string>('switchbot-secret', '');
     const [proxyUrl, setProxyUrl] = useLocalStorage<string>('switchbot-proxy', '');
+    const [selectedDevices, setSelectedDevices] = useLocalStorage<string[] | null>('switchbot-selected-devices', null);
+    const [cardSize, setCardSize] = useLocalStorage<CardSize>('switchbot-card-size', 'md');
 
     const value = useMemo(() => ({
         token,
@@ -37,8 +47,11 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         setSecret,
         proxyUrl,
         setProxyUrl,
-    // Note: setters from useLocalStorage (via useState) are stable and don't need to be in deps array
-    }), [token, secret, proxyUrl]);
+        selectedDevices,
+        setSelectedDevices,
+        cardSize,
+        setCardSize,
+    }), [token, secret, proxyUrl, selectedDevices, cardSize, setToken, setSecret, setProxyUrl, setSelectedDevices, setCardSize]);
 
     return (
         <SettingsContext.Provider value={value}>
