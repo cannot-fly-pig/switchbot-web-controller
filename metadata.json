@@ -1,0 +1,5 @@
+{
+  "name": "Copy of SwitchBot Web Controller",
+  "description": "A web-based PWA to control your SwitchBot devices. Designed for a 1920x540 display, it allows you to configure your API token and secret, select which devices to show, and control them from a clean dashboard.",
+  "requestFramePermissions": []
+}
