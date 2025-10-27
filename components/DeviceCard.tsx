@@ -1,60 +1,48 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { SettingsContext } from '../context/SettingsContext';
-import { sendCommand, getDeviceStatus } from '../services/switchbotService';
-import type { AnySwitchBotDevice, DeviceStatusResponse } from '../types/switchbot';
+import { getDeviceStatus, sendCommand } from '../services/switchbotService';
+import type { AnySwitchBotDevice, CommandBody, DeviceStatusResponse } from '../types/switchbot';
 import { Spinner } from './ui/Spinner';
+import { RefreshIcon, LightBulbIcon, AirConditionerIcon, BotIcon, ThermometerIcon } from './icons';
+import { AirConditionerRemote } from './AirConditionerRemote';
+import { LightRemote } from './LightRemote';
 
 interface DeviceCardProps {
     device: AnySwitchBotDevice;
 }
 
+const DeviceTypeIcon: React.FC<{ device: AnySwitchBotDevice, className?: string }> = ({ device, className }) => {
+    const type = device.deviceType || (device as any).remoteType;
+    switch (type) {
+        case 'Light':
+        case 'Color Bulb':
+        case 'Strip Light':
+            return <LightBulbIcon className={className} />;
+        case 'Air Conditioner':
+            return <AirConditionerIcon className={className} />;
+        case 'Bot':
+            return <BotIcon className={className} />;
+        case 'Meter':
+        case 'MeterPlus':
+            return <ThermometerIcon className={className} />;
+        default:
+            return null;
+    }
+}
+
+
 export const DeviceCard: React.FC<DeviceCardProps> = ({ device }) => {
     const { token, secret, proxyUrl } = useContext(SettingsContext);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [status, setStatus] = useState<DeviceStatusResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const deviceType = device.deviceType;
-
-    useEffect(() => {
-        const fetchStatus = async () => {
-            if (!token || !secret) return;
-            // Only fetch status for some device types to avoid errors for IR remotes etc.
-            if (device.deviceType && ['Bot', 'Curtain', 'Meter', 'Hub Mini', 'Plug'].includes(device.deviceType)) {
-                 try {
-                    const deviceStatus = await getDeviceStatus(token, secret, device.deviceId, proxyUrl);
-                    setStatus(deviceStatus);
-                } catch (err: any) {
-                    console.error(`Failed to get status for ${device.deviceName}`, err);
-                }
-            }
-        };
-        fetchStatus();
-        const interval = setInterval(fetchStatus, 30000); // refresh every 30s
-        return () => clearInterval(interval);
-    }, [token, secret, device.deviceId, device.deviceName, proxyUrl, device.deviceType]);
-    
-    const handleCommand = async (command: string, parameter: any = 'default', commandType: 'command' | 'customize' = 'command') => {
-        if (!token || !secret) {
-            setError("Token and Secret not set.");
-            return;
-        }
+    const fetchStatus = async () => {
         setIsLoading(true);
         setError(null);
         try {
-            await sendCommand(token, secret, device.deviceId, { command, parameter, commandType });
-             // After sending a command, refetch status after a short delay
-            setTimeout(async () => {
-                 try {
-                    if (device.deviceType && ['Bot', 'Curtain', 'Meter', 'Hub Mini', 'Plug'].includes(device.deviceType)) {
-                        const deviceStatus = await getDeviceStatus(token, secret, device.deviceId, proxyUrl);
-                        setStatus(deviceStatus);
-                    }
-                } catch (e) {
-                    // ignore refetch error, but log it
-                    console.error(`Failed to refetch status for ${device.deviceName}`, e);
-                }
-            }, 1500);
+            const newStatus = await getDeviceStatus(token, secret, device.deviceId, proxyUrl);
+            setStatus(newStatus);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -62,82 +50,100 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ device }) => {
         }
     };
     
+    useEffect(() => {
+        fetchStatus();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [device.deviceId, token, secret, proxyUrl]);
+
+    const handleSendCommand = async (command: string, parameter: any = 'default') => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const commandBody: CommandBody = {
+                commandType: 'command',
+                command,
+                parameter,
+            };
+            await sendCommand(token, secret, device.deviceId, commandBody, proxyUrl);
+            // After sending a command, wait a bit and refresh status
+            setTimeout(fetchStatus, 1500); 
+        } catch (err: any) {
+            setError(err.message);
+            setIsLoading(false);
+        }
+    };
+
     const renderControls = () => {
-        switch (deviceType) {
+        const type = device.deviceType || (device as any).remoteType;
+        
+        switch (type) {
+            case 'Air Conditioner':
+                return <AirConditionerRemote device={device} status={status} onCommand={handleSendCommand} isLoading={isLoading} />;
+            case 'Light':
+            case 'Color Bulb':
+            case 'Strip Light':
+                 return <LightRemote device={device} status={status} onCommand={handleSendCommand} isLoading={isLoading} />;
             case 'Bot':
                 return (
-                    <div className="flex justify-center mt-4">
-                        <button onClick={() => handleCommand('press')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
-                            Press
-                        </button>
-                    </div>
+                    <button 
+                        onClick={() => handleSendCommand('press')} 
+                        disabled={isLoading}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-600"
+                    >
+                        Press
+                    </button>
                 );
-            case 'Curtain':
-                return (
-                    <div className="flex justify-around mt-4">
-                        <button onClick={() => handleCommand('turnOn')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                            Open
-                        </button>
-                         <button onClick={() => handleCommand('turnOff')} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                            Close
-                        </button>
-                    </div>
-                );
-            case 'Plug':
-                 return (
-                    <div className="flex justify-around mt-4">
-                        <button onClick={() => handleCommand('turnOn')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                            Turn On
-                        </button>
-                         <button onClick={() => handleCommand('turnOff')} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                            Turn Off
-                        </button>
-                    </div>
-                );
-            case 'Air Conditioner':
-            case 'TV':
-            case 'Light':
-            case 'Others': // This is a remoteType for IR remotes
-                return <p className="text-center text-sm text-gray-500 mt-4">IR remote controls not implemented yet.</p>;
-
             default:
-                return null;
+                return <p className="text-gray-400">Controls not available for this device type ({type}).</p>;
         }
-    }
-    
-    const renderStatus = () => {
+    };
+
+    const renderStatusInfo = () => {
         if (!status) return null;
-        
-        return (
-            <div className="text-sm text-gray-400 mt-2 space-y-1">
-                {status.battery !== undefined && <p>Battery: {status.battery}%</p>}
-                {status.temperature !== undefined && <p>Temp: {status.temperature}°C</p>}
-                {status.humidity !== undefined && <p>Humidity: {status.humidity}%</p>}
-                {status.slidePosition !== undefined && <p>Position: {status.slidePosition}%</p>}
-                {status.power !== undefined && <p>Power: {status.power}</p>}
-            </div>
-        )
+        const statusItems = [];
+        if (typeof status.temperature !== 'undefined') {
+            statusItems.push(`🌡️ ${status.temperature}°C`);
+        }
+        if (typeof status.humidity !== 'undefined') {
+            statusItems.push(`💧 ${status.humidity}%`);
+        }
+        if (typeof status.battery !== 'undefined') {
+            statusItems.push(`🔋 ${status.battery}%`);
+        }
+        if (typeof status.power !== 'undefined') {
+            statusItems.push(`⚡ ${status.power}`);
+        }
+        if (statusItems.length === 0) return null;
+
+        return <div className="text-sm text-gray-300 flex flex-wrap gap-x-4 gap-y-1">{statusItems.map((item, i) => <span key={i}>{item}</span>)}</div>
     }
 
     return (
-        <div className="bg-gray-800 rounded-lg p-4 text-white w-64 h-72 flex flex-col justify-between flex-shrink-0">
-            <div>
-                <h3 className="text-lg font-bold truncate" title={device.deviceName}>{device.deviceName}</h3>
-                <p className="text-sm text-gray-400">{deviceType}</p>
-                <div className="mt-4 text-center">
-                    {renderStatus()}
+        <div className="bg-gray-900 p-4 rounded-lg shadow-lg text-white flex flex-col space-y-4">
+            <div className="flex justify-between items-start">
+                <div>
+                    <div className="flex items-center space-x-2">
+                        <DeviceTypeIcon device={device} className="h-5 w-5 text-gray-400" />
+                        <h2 className="text-lg font-bold">{device.deviceName}</h2>
+                    </div>
+                    {renderStatusInfo()}
+                </div>
+                <div className="flex items-center space-x-2">
+                    {isLoading && <Spinner />}
+                    <button onClick={fetchStatus} disabled={isLoading} className="p-1 text-gray-400 hover:text-white disabled:text-gray-600">
+                        <RefreshIcon className="h-5 w-5" />
+                    </button>
                 </div>
             </div>
+            
+            {error && <p className="text-red-400 text-sm">Error: {error}</p>}
 
-            <div className="flex flex-col justify-end flex-grow">
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-full">
-                        <Spinner />
-                    </div>
+            <div>
+                {isLoading && !status ? (
+                    <p className="text-gray-400">Loading status...</p>
                 ) : (
                     renderControls()
                 )}
-                {error && <p className="text-red-400 text-xs mt-2 text-center">{error}</p>}
             </div>
         </div>
     );
